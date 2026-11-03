@@ -1,0 +1,295 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Fredagsbarens event-API",
+    "description": "API til events i fredagsbaren. Holder styr paa events og tilmeldinger. Et event har et begraenset antal pladser, og API'en afviser tilmeldinger, naar eventet er fuldt.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Lokalt og via docker compose"
+    }
+  ],
+  "tags": [
+    { "name": "events", "description": "Opret, hent og slet events" },
+    { "name": "signups", "description": "Tilmeldinger til et event" },
+    { "name": "debug", "description": "Hjaelpe-endpoint til afproevning" }
+  ],
+  "paths": {
+    "/events": {
+      "get": {
+        "tags": ["events"],
+        "summary": "Hent alle events",
+        "operationId": "hentEvents",
+        "responses": {
+          "200": {
+            "description": "Liste af alle events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Event" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["events"],
+        "summary": "Opret et nyt event",
+        "operationId": "opretEvent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NytEvent" },
+              "example": {
+                "title": "Karaokeaften",
+                "date": "2026-12-04",
+                "capacity": 20
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Eventet blev oprettet",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Event" }
+              }
+            }
+          },
+          "400": {
+            "description": "title eller date mangler, eller capacity er ikke et positivt heltal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Fejl" },
+                "example": { "error": "capacity skal vaere et positivt heltal" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{eventId}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/EventId" }
+      ],
+      "get": {
+        "tags": ["events"],
+        "summary": "Hent et enkelt event",
+        "operationId": "hentEvent",
+        "responses": {
+          "200": {
+            "description": "Eventet",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Event" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/EventFindesIkke" }
+        }
+      },
+      "delete": {
+        "tags": ["events"],
+        "summary": "Slet et event",
+        "operationId": "sletEvent",
+        "responses": {
+          "204": { "description": "Eventet blev slettet. Ingen krop i svaret." },
+          "404": { "$ref": "#/components/responses/EventFindesIkke" }
+        }
+      }
+    },
+    "/events/{eventId}/signups": {
+      "parameters": [
+        { "$ref": "#/components/parameters/EventId" }
+      ],
+      "post": {
+        "tags": ["signups"],
+        "summary": "Tilmeld en person til et event",
+        "operationId": "tilmeld",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "example": "Frederik" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Personen blev tilmeldt. Svaret er det opdaterede event.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Event" }
+              }
+            }
+          },
+          "400": {
+            "description": "name mangler i kroppen",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Fejl" },
+                "example": { "error": "name mangler" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/EventFindesIkke" },
+          "409": {
+            "description": "Eventet er fuldt, eller personen er allerede tilmeldt",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Fejl" },
+                "examples": {
+                  "fuldt": {
+                    "summary": "Eventet er fuldt",
+                    "value": { "error": "Quizaften er fuldt" }
+                  },
+                  "allerede": {
+                    "summary": "Personen er allerede tilmeldt",
+                    "value": { "error": "Anna er allerede tilmeldt Quizaften" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{eventId}/signups/{name}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/EventId" },
+        {
+          "name": "name",
+          "in": "path",
+          "required": true,
+          "description": "Navnet paa den person, der skal afmeldes",
+          "schema": { "type": "string" },
+          "example": "Anna"
+        }
+      ],
+      "delete": {
+        "tags": ["signups"],
+        "summary": "Afmeld en person fra et event",
+        "operationId": "afmeld",
+        "responses": {
+          "204": { "description": "Personen blev afmeldt. Ingen krop i svaret." },
+          "404": {
+            "description": "Eventet findes ikke, eller personen er ikke tilmeldt",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Fejl" },
+                "examples": {
+                  "eventMangler": {
+                    "summary": "Eventet findes ikke",
+                    "value": { "error": "Event 99 findes ikke" }
+                  },
+                  "tilmeldingMangler": {
+                    "summary": "Personen er ikke tilmeldt",
+                    "value": { "error": "Frederik er ikke tilmeldt Quizaften" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/debug/slow": {
+      "get": {
+        "tags": ["debug"],
+        "summary": "Svarer med vilje efter fem sekunder",
+        "description": "Bruges til at afproeve, at frontenden haandterer en timeout.",
+        "operationId": "langsom",
+        "responses": {
+          "200": {
+            "description": "Svar efter fem sekunder",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "besked": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "EventId": {
+        "name": "eventId",
+        "in": "path",
+        "required": true,
+        "description": "Eventets id",
+        "schema": { "type": "integer", "format": "int32" },
+        "example": 1
+      }
+    },
+    "responses": {
+      "EventFindesIkke": {
+        "description": "Eventet findes ikke",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Fejl" },
+            "example": { "error": "Event 99 findes ikke" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Event": {
+        "type": "object",
+        "required": ["id", "title", "date", "capacity", "participants"],
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "title": { "type": "string", "example": "Quizaften" },
+          "date": { "type": "string", "example": "2026-11-13" },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Antal pladser i alt",
+            "example": 3
+          },
+          "participants": {
+            "type": "array",
+            "description": "Navne paa de tilmeldte",
+            "items": { "type": "string" },
+            "example": ["Anna", "Bo"]
+          }
+        }
+      },
+      "NytEvent": {
+        "type": "object",
+        "required": ["title", "date", "capacity"],
+        "properties": {
+          "title": { "type": "string" },
+          "date": { "type": "string" },
+          "capacity": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "Fejl": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Forklaring paa hvad der gik galt"
+          }
+        }
+      }
+    }
+  }
+}
