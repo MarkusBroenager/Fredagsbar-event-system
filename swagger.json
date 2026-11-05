@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Fredagsbarens event-API",
-    "description": "API til events i fredagsbaren. Holder styr paa events og tilmeldinger. Et event har et begraenset antal pladser, og API'en afviser tilmeldinger, naar eventet er fuldt.",
+    "description": "API til events i fredagsbaren. Holder styr på events og tilmeldinger. Et event har et begrænset antal pladser, og API'en afviser tilmeldinger, når eventet er fuldt.",
     "version": "1.0.0"
   },
   "servers": [
@@ -14,7 +14,7 @@
   "tags": [
     { "name": "events", "description": "Opret, hent og slet events" },
     { "name": "signups", "description": "Tilmeldinger til et event" },
-    { "name": "debug", "description": "Hjaelpe-endpoint til afproevning" }
+    { "name": "debug", "description": "Hjælpe-endpoint til afprøvning" }
   ],
   "paths": {
     "/events": {
@@ -209,7 +209,7 @@
       "get": {
         "tags": ["debug"],
         "summary": "Svarer med vilje efter fem sekunder",
-        "description": "Bruges til at afproeve, at frontenden haandterer en timeout.",
+        "description": "Bruges til at afprøve, at frontenden håndterer en timeout.",
         "operationId": "langsom",
         "responses": {
           "200": {

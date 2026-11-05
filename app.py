@@ -11,6 +11,10 @@ st.set_page_config(page_title="Fredagsbaren", page_icon=":beers:")
 st.title("Fredagsbarens events")
 
 
+if "besked" in st.session_state:
+    st.success(st.session_state.pop("besked"))
+
+
 def vis_statusfejl(fejl):
     try:
         besked = fejl.response.json().get("error", "Ukendt fejl")
@@ -108,13 +112,13 @@ if events:
     if kol_til.button("Tilmeld mig", disabled=fuldt):
         ok, _ = kald("POST", f"/events/{valgt['id']}/signups", json={"name": navn})
         if ok:
-            st.success(f"{navn} er tilmeldt {valgt['title']}.")
+            st.session_state.besked = f"{navn} er tilmeldt {valgt['title']}."
             st.rerun()
 
     if kol_af.button("Afmeld mig"):
         ok, _ = kald("DELETE", f"/events/{valgt['id']}/signups/{navn}")
         if ok:
-            st.success(f"{navn} er afmeldt {valgt['title']}.")
+            st.session_state.besked = f"{navn} er afmeldt {valgt['title']}."
             st.rerun()
 
 
@@ -134,5 +138,5 @@ with st.form("nyt_event"):
             json={"title": titel, "date": str(dato), "capacity": int(pladser)},
         )
         if ok:
-            st.success(f"{nyt['title']} er oprettet.")
+            st.session_state.besked = f"{nyt['title']} er oprettet."
             st.rerun()
